@@ -10,3 +10,9 @@ The program takes about 700MB of spiffs (in the format of LittleFS) to store the
 If there is any problem with that or any other part of this little toy program, please let me know.  
 
 Mikey the Midnight Coder
+
+![MP Main](https://github.com/user-attachments/assets/5a652f26-739e-4a17-aacf-2e4484025942)
+![Phases](https://github.com/user-attachments/assets/beb41764-c65c-48c0-ae8f-854e0718ca39)
+![Sun Info](https://github.com/user-attachments/assets/ccb0a1a8-243c-4e80-9cd9-4913d3873078)
+![Where's the Moon](https://github.com/user-attachments/assets/a7526efd-c642-43fc-9940-0ddaec0bf534)
+![Menu](https://github.com/user-attachments/assets/03ec1185-ab6f-421a-a286-1126676a243b)
