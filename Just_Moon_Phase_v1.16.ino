@@ -39,7 +39,7 @@ int         dispLine1 = 8, dispLine2, dispLine3, dispLine4, dispLine5, dispLine6
 #include <TJpg_Decoder.h>
 JRESULT JPB_RC;   // Return code from drawing BG pic.
 
-#include <MoonRise.h>
+#include "MoonRise.h"
 MoonRise mr;
 struct tm * moonTimes;
 struct tm * sunTimes;
@@ -57,7 +57,7 @@ SunRise sr;
 String   stringIP;  // IP address.
 int      tftBL_Lvl = 75, prevBL_Lvl = -1;      // tft brightness, prev brightness.
 
-#include "esp_sntp.h"      // Get UTC epoch here.
+#include <esp_sntp.h>      // Get UTC epoch here.
 time_t   TS_Epoch = 0;  // Set by Time Sync, printed by loop if not 0.
 time_t   UTC;
 time_t   now;
@@ -111,7 +111,7 @@ const int    defaultBright = 60;
 const int    myOrientation = ORIENT_POWER_LEFT;
 #endif
 
-#include "Preferences.h"
+#include <Preferences.h>
 Preferences preferences;
 #define RO_MODE true   // Preferences calls Read-only mode
 #define RW_MODE false  // Preferences calls Read-write mode
@@ -158,7 +158,8 @@ void setup()
   tft.setTextColor(TFT_WHITE, TFT_BLACK);
   tft.setTextPadding(tft.width());
 
-  if (myOrientation == ORIENT_POWER_LEFT) {  // Asjust pins based on display orientation.
+  // Asjust pin function based on display orientation.
+  if (myOrientation == ORIENT_POWER_LEFT) {
     // Increase brightness is always on top, and...
     topButton = 0; bottomButton = 14;
   } else {
@@ -166,7 +167,7 @@ void setup()
     topButton = 14; bottomButton = 0;
   }
 
-  delay(2000);
+  delay(3000);
   Serial.println("This is Moon Phase and Time on T-Display S3.");
   //  Serial.println("Running from:");
   //  Serial.println(__FILE__);
@@ -274,7 +275,8 @@ void setup()
   tft.drawString("Awaiting WiFi connection", tft.width() / 2, dispLine2, 4);
   tft.drawString("to " + String(chSSID), tft.width() / 2, dispLine5, 4);
   size_t bytesFree = heap_caps_get_free_size(MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM);
-  Serial.printf("memReport(): there are %zu MALLOC_CAP_8BIT | MALLOC_CAP_SPIRAM bytes free.", bytesFree);  
+  Serial.printf("memReport(): there are %zu MALLOC_CAP_8BIT | "
+                "MALLOC_CAP_SPIRAM bytes free.\r\n", bytesFree);
   Serial.printf("Connecting to WiFi %s ...", chSSID);
   WiFi.begin(chSSID, chPassword); delay(1500);
 
