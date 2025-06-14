@@ -89,15 +89,15 @@ void Build_and_Show()
 
   strftime(chBuffer, sizeof(chBuffer), "%T", &timeinfo);
   //  Serial.println(chBuffer);
-  spriteBG.drawString("Time:",  spriteBG.width() / 2 - 15, dispLine1, 4);
-  spriteBG.drawString(chBuffer, spriteBG.width() / 2 + 54, dispLine1, 4);
+  spriteBG.drawString("Time:",  spriteBG.width() / 2 - 11, dispLine1, 4);
+  spriteBG.drawString(chBuffer, spriteBG.width() / 2 + 55, dispLine1, 4);
 
   //Date
 
   strftime(chBuffer, sizeof(chBuffer), "%D", &timeinfo);
   //  Serial.print(chBuffer);  Serial.print(", ");
-  spriteBG.drawString("Date:",  spriteBG.width() / 2 - 15, dispLine2, 4);
-  spriteBG.drawString(chBuffer, spriteBG.width() / 2 + 54, dispLine2, 4);
+  spriteBG.drawString("Date:",  spriteBG.width() / 2 - 11, dispLine2, 4);
+  spriteBG.drawString(chBuffer, spriteBG.width() / 2 + 55, dispLine2, 4);
 
   // Moon Rise and Set times
 
@@ -120,17 +120,21 @@ void Build_and_Show()
     mr.calculate(lat, lon, now + 86400);  // Check tomorrow
     moonTimes = localtime(&mr.riseTime);
     strftime(chBuffer, sizeof(chBuffer), "%T", moonTimes);
+
+    // If the rise time is more than a day away, I change the label and value to yellow.
+    // I think it is obvious enough that it is tomorrow so I dropped off the red coloration.
+
     if ((mr.riseTime - now) > 86400)
-      spriteBG.setTextColor(TFT_RED, RGB565(0, 0, 166));
-    else
+      //      spriteBG.setTextColor(TFT_RED, RGB565(0, 0, 166));
+      //    else
       spriteBG.setTextColor(TFT_YELLOW, RGB565(0, 0, 166));
     mr.calculate(lat, lon, now);  // Reset times to today
   } else {
     moonTimes = localtime(&mr.riseTime);
     strftime(chBuffer, sizeof(chBuffer), "%T", moonTimes);
   }
-  spriteBG.drawString("Rise:",  spriteBG.width() / 2 - 15, dispLine3, 4);
-  spriteBG.drawString(chBuffer, spriteBG.width() / 2 + 54, dispLine3, 4);
+  spriteBG.drawString("Rise:",  spriteBG.width() / 2 - 11, dispLine3, 4);
+  spriteBG.drawString(chBuffer, spriteBG.width() / 2 + 55, dispLine3, 4);
   spriteBG.setTextColor(TFT_WHITE, RGB565(0, 0, 166));
 
   // Moon Set
@@ -146,26 +150,30 @@ void Build_and_Show()
     mr.calculate(lat, lon, now + 86400);  // Check tomorrow
     moonTimes = localtime(&mr.setTime);
     strftime(chBuffer, sizeof(chBuffer), "%T", moonTimes);
+
+    // If the rise time is more than a day away, I change the label and value to yellow.
+    // I think it is obvious enough that it is tomorrow so I dropped off the red coloration.
+
     if ((mr.setTime - now) > 86400)
-      spriteBG.setTextColor(TFT_RED, RGB565(0, 0, 166));
-    else
+      //      spriteBG.setTextColor(TFT_RED, RGB565(0, 0, 166));
+      //    else
       spriteBG.setTextColor(TFT_YELLOW, RGB565(0, 0, 166));
     mr.calculate(lat, lon, now);  // Reset times to today
   } else {
     moonTimes = localtime(&mr.setTime);
     strftime(chBuffer, sizeof(chBuffer), "%T", moonTimes);
   }
-  spriteBG.drawString("Set:",   spriteBG.width() / 2 - 15, dispLine4, 4);
-  spriteBG.drawString(chBuffer, spriteBG.width() / 2 + 54, dispLine4, 4);
+  spriteBG.drawString("Set:",   spriteBG.width() / 2 - 11, dispLine4, 4);
+  spriteBG.drawString(chBuffer, spriteBG.width() / 2 + 55, dispLine4, 4);
   spriteBG.setTextColor(TFT_WHITE, RGB565(0, 0, 166));
 
   // Visible or not?
 
-  spriteBG.drawString("Visible:", spriteBG.width() / 2 - 15, dispLine5, 4);
+  spriteBG.drawString("Visible:", spriteBG.width() / 2 - 11, dispLine5, 4);
   if (mr.isVisible)
-    spriteBG.drawString("Yes",   spriteBG.width() / 2 + 74, dispLine5, 4);
+    spriteBG.drawString("Yes",    spriteBG.width() / 2 + 78, dispLine5, 4);
   else
-    spriteBG.drawString("No",   spriteBG.width() / 2 + 74, dispLine5, 4);
+    spriteBG.drawString("No",     spriteBG.width() / 2 + 78, dispLine5, 4);
 
   // Phase
 
@@ -174,11 +182,11 @@ void Build_and_Show()
   if (millis() > BLChangeMillis + showPhaseDelay) {
     spriteBG.drawString(MoonPhase(timeinfo.tm_mday, timeinfo.tm_mon + 1,
                                   timeinfo.tm_year + 1900, Hemisphere),
-                        4, dispLine6 + 5, 4);
+                        6, dispLine6 + 5, 4);
   } else {
     tft.setTextDatum(TL_DATUM);
     spriteBG.setTextPadding(tft.width());
-    spriteBG.drawString(chBLChange, 4, dispLine6 + 5, 4);
+    spriteBG.drawString(chBLChange, 6, dispLine6 + 5, 4);
     spriteBG.setTextPadding(0);
   }
 
@@ -417,7 +425,11 @@ void doMenu()
       spriteMenu.setTextColor(TFT_BLACK, TFT_YELLOW);
     else
       spriteMenu.setTextColor(TFT_YELLOW, TFT_BLACK);
-    spriteMenu.drawString("Show/Hide Moon", 0, 10, 4);
+    if (showMoon)
+      sprintf(chBuffer, "Hide Moon (m%i.jpg)", Phase);
+    else
+      sprintf(chBuffer, "Show Moon (m%i.jpg)", Phase);
+    spriteMenu.drawString(chBuffer, 0, 10, 4);
     spriteMenu.drawFastHLine(0, SPR_MENU_HEIGHT - 1, tft.width(), TFT_YELLOW);
     spriteMenu.pushSprite(0, 90);
 
@@ -471,8 +483,8 @@ void doMenu()
 
           case 3:
             showMoon = !showMoon;  //There is no display so nothing to wait for.  Skip first test.
-//            while ((digitalRead(topButton) == BUTTON_NOT_PRESSED) &&  // Wait for button press
-//                   (digitalRead(bottomButton) == BUTTON_NOT_PRESSED));  // to exit.
+            //            while ((digitalRead(topButton) == BUTTON_NOT_PRESSED) &&  // Wait for button press
+            //                   (digitalRead(bottomButton) == BUTTON_NOT_PRESSED));  // to exit.
             while ((digitalRead(topButton) == BUTTON_PRESSED) ||  // Wait for unpress of
                    (digitalRead(bottomButton) == BUTTON_PRESSED));  // all buttons.
             return; break;
@@ -503,7 +515,7 @@ void setHourBrightness()
                 iHour, iMin, iSec, iHour, tftBL_Lvl);
   preferences.end();
 
-  Serial.printf("Calling xIN_RANGE with %i, %i, %i\r\n", iHour, SleepHour, WakeupHour);
+  //  Serial.printf("Calling xIN_RANGE with %i, %i, %i\r\n", iHour, SleepHour, WakeupHour);
   SleepTime = xIN_RANGE(iHour, SleepHour, WakeupHour);
   //  if (WakeupHour > SleepHour)
   //    SleepTime = (iHour >= WakeupHour || iHour <= SleepHour);
@@ -533,15 +545,9 @@ void SaveOptions()
 {
   // On the modulo 10 minute, see if saving the brightness value is needed.
   // Also on the second to last second of the hour.
-  // Since this was an evolution rather than a design, it turns out that the
-  //  brightness during dark time gets written to the Hourlys preferences values
-  //  but the Hourlys during display on time do not get written to the Hourlys
-  //  preferences entries.  It only happens the first time so not a big deal but if
-  //  you type H into the Serial Monitor, you will see how it looks.  Odd, yes, but
-  //  totally workable.
   if ((iMin > 0 && iMin % 10 == 0 && iSec == 0) ||
       (iMin == 59 && iSec == 58)) {
-    preferences.begin("Hourlys", RW_MODE);
+    preferences.begin("s", RW_MODE);
     sprintf(chHour, "%d", iHour);
     nTemp = preferences.getInt(chHour, defaultBright);
     if (nTemp != tftBL_Lvl) {
@@ -612,7 +618,7 @@ void AddStars()
     //  disk as the star field scrolls left.  As it should be!
     count = random(3);
     debugTime();  // Print time of day for message.
-    Serial.printf("Making %i pass(es) to possibly create stars.\r\n", count);
+    Serial.printf("Making %i pass%s to possibly create stars.\r\n", count, count == 1 ? "" : "es");
     for (int i = 0; i < count; i++) {  // Few new stars each frame (maybe)
       brightness = random(155) + 100;   // Brightness range from 100 to 255.
       // Serial.printf("Brightness %i ", brightness);
@@ -729,7 +735,7 @@ void HandleSerialInput()
 
     default:
       Serial.printf("*>> Unknown input \'%c\'!\r\n", input);  // Handle unknown input
-      showInputOptions();
+      showInputOptionsFull();
       break;
   }
 }
@@ -782,11 +788,15 @@ void ShowSunTimes()
   tft.drawString(chBuffer, 170, dispLine2, 4);
   Serial.printf("Sun set: %s\r\n", chBuffer);
 
-  spriteBG.drawString("Visible:", spriteBG.width() / 2 - 15, dispLine3, 4);
+  // I know that it is a bit silly to put up an indication of whether the sun is visible or not,
+  //  but it was available from the library and I had room left over so I put it in.  Or, you could
+  //  just look out the window.  ;-))
+
+  tft.drawString("Visible:", 4, dispLine3, 4);
   if (sr.isVisible)
-    spriteBG.drawString("Yes", spriteBG.width() / 2 + 74, dispLine3, 4);
+    tft.drawString("Yes", 170, dispLine3, 4);
   else
-    spriteBG.drawString("No",  spriteBG.width() / 2 + 74, dispLine3, 4);
+    tft.drawString("No",  170, dispLine3, 4);
 
   tft.setTextColor(TFT_YELLOW, TFT_BLACK);
   tft.drawString("Press either button to return.", 1, dispLine6, 4);
