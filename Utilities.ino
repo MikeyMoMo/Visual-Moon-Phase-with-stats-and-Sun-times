@@ -79,9 +79,11 @@ void Build_and_Show()
   // While the disk looks totally dark, draw a circle so we can see where the moon
   //  is even though we cannot see it.
   if (iIN_RANGE(Phase, 330, 30))
-    spriteMoonInvis.drawCircle(50, 50, 38, TFT_WHITE);  // The moon face width is 78 pixels.
-  if (showMoon)
-    spriteMoonInvis.pushToSprite(&spriteSF, 30, 22, TFT_BLACK);
+    // The moon face width is 78 pixels.
+    if (showMoon) {
+      spriteMoonInvis.drawCircle(50, 50, 38, 0x7BCF);
+      spriteMoonInvis.pushToSprite(&spriteSF, 30, 22, TFT_BLACK);
+    }
   // Leave off corners.
   spriteSF.pushToSprite(&spriteBG, 0, 0);  // , RGB565(0, 0, 166));
 
@@ -102,7 +104,7 @@ void Build_and_Show()
   // Moon Rise and Set times
 
   time(&now);
-  mr.calculate(lat, lon, now);  // Get all of the answsers
+  mr.calculate(lat, lon, now);  // Get all of the answers
 
   spriteBG.setTextColor(TFT_WHITE, RGB565(0, 0, 166));
 
@@ -426,9 +428,9 @@ void doMenu()
     else
       spriteMenu.setTextColor(TFT_YELLOW, TFT_BLACK);
     if (showMoon)
-      sprintf(chBuffer, "Hide Moon (m%i.jpg)", Phase);
+      sprintf(chBuffer, "Hide Moon (m%03i.jpg)", Phase);
     else
-      sprintf(chBuffer, "Show Moon (m%i.jpg)", Phase);
+      sprintf(chBuffer, "Show Moon (m%03i.jpg)", Phase);
     spriteMenu.drawString(chBuffer, 0, 10, 4);
     spriteMenu.drawFastHLine(0, SPR_MENU_HEIGHT - 1, tft.width(), TFT_YELLOW);
     spriteMenu.pushSprite(0, 90);
@@ -771,7 +773,7 @@ void ShowSunTimes()
 
   time(&now);
 
-  sr.calculate(lat, lon, now);  // Get all of the answsers
+  sr.calculate(lat, lon, now);  // Get all of the answers
 
   // Rise time
   riseEpoch = sr.riseTime;
