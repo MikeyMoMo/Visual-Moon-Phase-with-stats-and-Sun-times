@@ -346,25 +346,18 @@ void loop()
   iHour   = timeinfo.tm_hour;
 
   if (prevHour != iHour) {
+    setHourBrightness();
 #if defined DO_DEBUG_PRINTS
     Serial.printf("Current date: %i/%i/%i\r\n", iMonth, iDOM, iYear);
-    //    Serial.printf("AgeOfTheMoon: %f\r\n", AgeOfTheMoon(iDOM, iMonth, iYear));
-    //    time_t epoch = get_epoch_time();
-    //    moon = moonPhase.getPhase(epoch);
-    //    Serial.printf("Moon angle: %i\r\n", moon.angle);
 #endif
   }
-
   if (tftBL_Lvl == 0) {
     prevHour = iHour;
     delay(100);
     if (prevBL_Lvl != 0) {
       prevBL_Lvl = 0;
       tft.fillScreen(TFT_BLACK);
-      //      ledcWrite(TFT_BL, defaultBright);  // Activate whatever was decided on.
-      //      delay(10);
-      //      tft.setTextColor(TFT_YELLOW, TFT_BLACK);
-      ledcWrite(TFT_BL, 200);  // Turn off the backlight
+      ledcWrite(TFT_BL, 200);  // Turn on the backlight
       tft.setTextColor(TFT_YELLOW, TFT_BLACK);
       tft.setTextDatum(TC_DATUM);
       if (xIN_RANGE(iHour, SleepHour, WakeupHour)) {
@@ -392,7 +385,7 @@ void loop()
   Build_and_Show();
 
   if (prevHour != iHour) {
-    setHourBrightness();
+    //    setHourBrightness();  // Already done, above.
     if (!firstPass) HourDance();
     firstPass = false;
     prevHour = iHour;
