@@ -1,6 +1,6 @@
-/***************************************************************************/
+/*******************************************************************************************/
 void Build_and_Show()
-/***************************************************************************/
+/*******************************************************************************************/
 {
   if (iSec % 10 == 0) AddStars();  // Adds stars to spriteSF_Base.
   /* Well, the following needs a little explanation.  It took a while to figure out the order
@@ -54,50 +54,49 @@ void Build_and_Show()
       Cards, anyone?
   */
 
-  spriteSF_Base.pushToSprite(&spriteSF, 22, 22);
-  spriteMoonInvis.fillSprite(TFT_BLACK);
+  spriteSF_Base.pushToSprite(&spriteSF, 22, 22);  // Add starfield first.
+  spriteMoonInvis.fillSprite(TFT_BLACK);  // Work sprite to add moon and circle
 
-  time_t epoch = get_epoch_time();
-  moon = moonPhase.getPhase(epoch);
-  Phase = moon.angle;
+  if (showMoon) {
+    time_t epoch = get_epoch_time();
+    moon = moonPhase.getPhase(epoch);
+    Phase = moon.angle;
 #if defined DO_DEBUG_PRINTS
-  if (prevHour != iHour)
-    Serial.printf("moon.angle returned %i\r\n", Phase);
+    if (prevHour != iHour)
+      Serial.printf("moon.angle returned %i\r\n", Phase);
 #endif
-  if (Hemisphere == "south") Phase = 1 - Phase;
-  Phase = Phase & ~1;  // Pictures are in 2º increments so "and off" the 1 bit.
+    if (Hemisphere == "south") Phase = 1 - Phase;
+    Phase = Phase & ~1;  // Pictures are in 2º increments so "and off" the 1 bit.
 
-  // Draw a jpeg image stored in LittleFS at x,y named by Phase.
-  sprintf(moonPhasePic, "/m%03i.jpg", Phase);
+    // Draw a jpeg image stored in LittleFS at x,y named by Phase.
+    sprintf(moonPhasePic, "/m%03i.jpg", Phase);
 #if defined DO_DEBUG_PRINTS
-  if (prevHour != iHour)
-    Serial.printf("Moon phase pic: %s\r\n", moonPhasePic);
+    if (prevHour != iHour)
+      Serial.printf("Moon phase pic: %s\r\n", moonPhasePic);
 #endif
-  JPB_RC = TJpgDec.drawFsJpg(0, 0, moonPhasePic, LittleFS);
-  if (JPB_RC != JDR_OK) Serial.printf("Picture %s load failed for moon phase with "
-                                        "error code %i\r\n", moonPhasePic, JPB_RC);
-  // While the disk looks totally dark, draw a circle so we can see where the moon
-  //  is even though we cannot see it.
-  if (iIN_RANGE(Phase, 330, 30))
-    // The moon face width is 78 pixels.
-    if (showMoon) {
+    JPB_RC = TJpgDec.drawFsJpg(0, 0, moonPhasePic, LittleFS);
+    if (JPB_RC != JDR_OK) Serial.printf("Picture %s load failed for moon phase with "
+                                          "error code %i\r\n", moonPhasePic, JPB_RC);
+    // While the disk looks totally dark, draw a circle so we can see where the moon
+    //  is even though we cannot see it.
+    if (iIN_RANGE(Phase, 330, 30))  // The moon face width is 78 pixels.
       spriteMoonInvis.drawCircle(50, 50, 38, 0x7BCF);
-      spriteMoonInvis.pushToSprite(&spriteSF, 30, 22, TFT_BLACK);
-    }
-  // Leave off corners.
+    spriteMoonInvis.pushToSprite(&spriteSF, 30, 22, TFT_BLACK);
+    // Leave off corners.
+  }
   spriteSF.pushToSprite(&spriteBG, 0, 0);  // , RGB565(0, 0, 166));
 
   // Time
 
   strftime(chBuffer, sizeof(chBuffer), "%T", &timeinfo);
-  //  Serial.println(chBuffer);
+  // Serial.println(chBuffer);
   spriteBG.drawString("Time:",  spriteBG.width() / 2 - 11, dispLine1, 4);
   spriteBG.drawString(chBuffer, spriteBG.width() / 2 + 55, dispLine1, 4);
 
   //Date
 
   strftime(chBuffer, sizeof(chBuffer), "%D", &timeinfo);
-  //  Serial.print(chBuffer);  Serial.print(", ");
+  // Serial.print(chBuffer);  Serial.print(", ");
   spriteBG.drawString("Date:",  spriteBG.width() / 2 - 11, dispLine2, 4);
   spriteBG.drawString(chBuffer, spriteBG.width() / 2 + 55, dispLine2, 4);
 
@@ -254,8 +253,8 @@ void ShowFuturePhases()
 
     tmlocalTime = localtime(&epoch);
     // Testing
-    //    strftime(chBuffer, sizeof(chBuffer), "%a %b %d %R", tmlocalTime);
-    //    Serial.printf("Phase angle %3i, Date %s\r\n", moon.angle, chBuffer);
+    // strftime(chBuffer, sizeof(chBuffer), "%a %b %d %R", tmlocalTime);
+    // Serial.printf("Phase angle %3i, Date %s\r\n", moon.angle, chBuffer);
     // End Testing
 
     // Make it right again!
@@ -477,16 +476,20 @@ void doMenu()
 
           case 2:
             ShowSunTimes();
-            while ((digitalRead(topButton) == BUTTON_NOT_PRESSED) &&  // Wait for button press
-                   (digitalRead(bottomButton) == BUTTON_NOT_PRESSED));  // to exit.
-            while ((digitalRead(topButton) == BUTTON_PRESSED) ||  // Wait for unpress of
-                   (digitalRead(bottomButton) == BUTTON_PRESSED));  // all buttons.
+            // Wait for button press to exit.
+            while ((digitalRead(topButton) == BUTTON_NOT_PRESSED) &&
+                   (digitalRead(bottomButton) == BUTTON_NOT_PRESSED));
+            // Wait for unpress of all buttons.
+            while ((digitalRead(topButton) == BUTTON_PRESSED) ||
+                   (digitalRead(bottomButton) == BUTTON_PRESSED));
             return; break;
 
-          case 3:
-            showMoon = !showMoon;  //There is no display so nothing to wait for.  Skip first test.
-            //            while ((digitalRead(topButton) == BUTTON_NOT_PRESSED) &&  // Wait for button press
-            //                   (digitalRead(bottomButton) == BUTTON_NOT_PRESSED));  // to exit.
+            showMoon = !showMoon;
+            //There is no display so nothing to wait for.  Skip first test.
+            // Wait for button press
+            // while ((digitalRead(topButton) == BUTTON_NOT_PRESSED) &&
+            //        (digitalRead(bottomButton) == BUTTON_NOT_PRESSED));  // to exit.
+            Serial.printf("Moon will%s be shown.\r\n", showMoon ? "" : " not");
             while ((digitalRead(topButton) == BUTTON_PRESSED) ||  // Wait for unpress of
                    (digitalRead(bottomButton) == BUTTON_PRESSED));  // all buttons.
             return; break;
@@ -567,7 +570,7 @@ void printVers()
   int      lastDot, lastV;
   String   sTemp;
 
-  //  Serial.println(__FILENAME__);  // Same as __FILE__
+  // Serial.println(__FILENAME__);  // Same as __FILE__
   sTemp = String(__FILE__);
   // Get rid of the trailing .ino tab name. In this case, "\Utilities.ino"
   sTemp = sTemp.substring(0, sTemp.lastIndexOf("\\"));
@@ -620,7 +623,8 @@ void AddStars()
     //  disk as the star field scrolls left.  As it should be!
     count = random(3);
     debugTime();  // Print time of day for message.
-    Serial.printf("Making %i pass%s to possibly create stars.\r\n", count, count == 1 ? "" : "es");
+    Serial.printf("Making %i pass%s to possibly create stars.\r\n",
+                  count, count == 1 ? "" : "es");
     for (int i = 0; i < count; i++) {  // Few new stars each frame (maybe)
       brightness = random(155) + 100;   // Brightness range from 100 to 255.
       // Serial.printf("Brightness %i ", brightness);
@@ -649,15 +653,13 @@ void AddStars()
         spriteSF_Base.fillSmoothCircle(spriteSF_Base.width() - 4,  // could be 0...
                                        random(spriteSF_Base.height()), random(3),
                                        RGB565(204, 211, 255));  // Little bit Blue.
-        //                             RGB565(177, 185, 255));
         Serial.println("Made a blue circle.");
       }
       else if (colorChoice == 7) {  // Even more rare, a 3 making a redish/pinkish dot
         spriteSF_Base.fillSmoothCircle(spriteSF_Base.width() - 4,  // then no star!
                                        random(spriteSF_Base.height()), random(3),
                                        RGB565(255, 211, 204));  // Little bit Red.
-        //                             RGB565(225, 157, 157));
-        Serial.println("Made a red circle.");
+        Serial.println("Made a red(ish) circle.");
       }
     }
   }
@@ -790,9 +792,9 @@ void ShowSunTimes()
   tft.drawString(chBuffer, 170, dispLine2, 4);
   Serial.printf("Sun set: %s\r\n", chBuffer);
 
-  // I know that it is a bit silly to put up an indication of whether the sun is visible or not,
-  //  but it was available from the library and I had room left over so I put it in.  Or, you could
-  //  just look out the window.  ;-))
+  // I know that it is a bit silly to put up an indication of whether the sun is
+  //  visible or not, but it was available from the library and I had room left over
+  //  so I put it in.  Or, you could just look out the window.  ;-))
 
   tft.drawString("Visible:", 4, dispLine3, 4);
   if (sr.isVisible)
