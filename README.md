@@ -1,5 +1,5 @@
 # Visual-Moon-Phase-with-stats-and-Sun-times
-This is mostly a visualization of the moon phase and a tutorial on invisible-color sprite usage.
+This is mostly a visualization of the moon phase and a tutorial on invisible-color sprite usage.  Updated to version 2.0+ to include Paralactic Angle for face rotation.
 
 See the pictures, below, for a better idea what this does.  It was created as a simple little moon phase display.  It then got a moving starfield behind the moon.  It then got a little 2-button menu (not using a library).  The moon is inserted using the Paralactic Angle so the moon will look like it does at any latitude using an invisible color (black) to cut off the four corners of the jpg then that is put onto another sprite that has a randomly created, slowly scrolling starfield on it. There are multiple sizes and color (pale blue, pale red, white and grey) of stars to make it look somewhat realistic and they scroll to the left as new stars come on from the right.
 
