@@ -13,12 +13,12 @@ void Build_and_Show()
   if (!lastFetchFailed && (iMin % 10 == 0) && (iPrev_PA_min != iMin)) {
     Serial.printf("Attempting PA fetch at %02d:%02d...\n", iHour, iMin);
     if (GetMS_PA_Value()) {
-      Serial.println("Fetch succeeded.");
+      Serial.println(" Fetch succeeded.");
       lastFetchFailed = false;
       failCount = 0;
       iPrev_PA_min = iMin;
     } else {
-      Serial.println("Fetch failed. Will retry each minute.");
+      Serial.println(" Fetch failed. Will retry each minute.");
       lastFetchFailed = true;
       failCount = 1;
       iPrev_PA_min = iMin;
@@ -567,24 +567,22 @@ void AddStars()
   }
 }
 /*******************************************************************************************/
-void HandleSerialInput()
+void HandleSerialInput() 
 /*******************************************************************************************/
 {
-  char input = Serial.read();  // Read one character from the serial input
+  if (!Serial.available()) return;
+
   int i, iHTemp;
 
-  input = toupper(input); // Convert the character to uppercase
-  if (input != '\r' && input != '\n')
-    Serial.printf("User input %c\r\n", input);  // Show user input
+  char input = Serial.read();
+  input = toupper(input);
 
-  // In use:
-  //     D turns on the display at default brightness.  If already on, turns it off.
-  //     H (testing) to see all Hourly brightness values on the Monitor.");
-  //     ? for this list.  Upper or Lower case OK.");
-  //     default action - Show a message that the user is drunk!  ;-))
+  // Ignore carriage return and newline entirely
+  if (input == '\r' || input == '\n') return;
+
+  Serial.printf("User input %c\r\n", input);
 
   switch (input) {
-
     case 'D':
       if (tftBL_Lvl == 0) {
         Serial.println("Turning screen on.");
@@ -612,7 +610,7 @@ void HandleSerialInput()
       showInputOptions();
       break;
 
-    case 'B':  // Show hourly brightness values
+    case 'B':
       preferences.begin("Hourlys", RO_MODE);
       for (i = 0; i < 24; i++) {
         sprintf(chHour, "%d", i);
@@ -621,9 +619,10 @@ void HandleSerialInput()
       }
       preferences.end();
       showInputOptions();
+      showInputOptions();
       break;
 
-    case 'P':  // Show some internal info.
+    case 'P':
       Serial.printf("Picture loaded m%i.jpg\r\n", Phase);
       break;
 
@@ -635,12 +634,8 @@ void HandleSerialInput()
       showInputOptionsFull();
       break;
 
-    case '\r':
-    case '\n':
-      break;
-
     default:
-      Serial.printf("*>> Unknown input \'%c\'!\r\n", input);  // Handle unknown input
+      Serial.printf("*>> Unknown input '%c'!\r\n", input);
       showInputOptionsFull();
       break;
   }
@@ -657,7 +652,8 @@ void showInputOptionsFull()
 {
   Serial.println("Moon Phase & Sun Times, v" + sVer);
   Serial.println("Running from:"); Serial.println(__FILE__);
-  Serial.print("Compiled on "); Serial.print(__DATE__); Serial.println(__TIME__);
+  Serial.print("Compiled on "); Serial.print(__DATE__); 
+  Serial.print(" at "); Serial.println(__TIME__);
   Serial.println("Enter D to turn on the display at default brightness or off.");
   Serial.println("Enter B (testing) to see all Hourly brightness values on the Monitor.");
   Serial.println("Enter P (testing) to see loaded picture name (Info).");
