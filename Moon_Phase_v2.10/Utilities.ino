@@ -382,64 +382,55 @@ void ShowFuturePhases()
     // Adjust angle for hemisphere/latitude
     MoonOrientation orient = AdjustedMoonAngle(moon.angleDeg, latitude, Hemisphere);
 
-    //    Serial.print("orient.adjustedAngle ");
-    //    Serial.println(orient.adjustedAngle);
-
-    //    tmlocalTime = localtime(&epoch);
-    //    strftime(chBuffer, sizeof(chBuffer), "%a %b %d", tmlocalTime);
-
     if (iIN_RANGE(orient.adjustedAngle, 0, 5) && !NM_Done) {
       NM_Done = true;
       tft.drawString("New Moon", 4, useLine, 4);
       tmlocalTime = localtime(&epoch);
       strftime(chBuffer, sizeof(chBuffer), "%a %b %d", tmlocalTime);
       tft.drawString(chBuffer, 170, useLine, 4); useLine += font4Height;
-      strftime(chBuffer, sizeof(chBuffer), "New Moon %c", tmlocalTime);
-      Serial.println(chBuffer);
-      Serial.printf("Match window 0-5, matched with %d\r\n",
-                    orient.adjustedAngle);
-      epoch += (24 * 6 * 3600);
+      strftime(chBuffer, sizeof(chBuffer), "New Moon\t%c ", tmlocalTime);
+      Serial.print(chBuffer);
+      Serial.printf("at %dº\r\n", orient.adjustedAngle);
+      epoch += 561600;  // 24 Hrs * 6.5 Days * 3600 Seconds/Hr + 1 hour
     }
+
     if (iIN_RANGE(orient.adjustedAngle, 90, 95) && !FQ_Done) {
       FQ_Done = true;
       tmlocalTime = localtime(&epoch);
       strftime(chBuffer, sizeof(chBuffer), "%a %b %d", tmlocalTime);
       tft.drawString("First Quarter", 4, useLine, 4);
       tft.drawString(chBuffer, 170, useLine, 4); useLine += font4Height;
-      strftime(chBuffer, sizeof(chBuffer), "First Quarter %c", tmlocalTime);
-      Serial.println(chBuffer);
-      Serial.printf("Match window 90-95, matched with %d\r\n",
-                    orient.adjustedAngle);
-      epoch += (24 * 6 * 3600);
+      strftime(chBuffer, sizeof(chBuffer), "First Quarter\t%c ", tmlocalTime);
+      Serial.print(chBuffer);
+      Serial.printf("at %dº\r\n", orient.adjustedAngle);
+      epoch += 561600;  // 24 Hrs * 6.5 Days * 3600 Seconds/Hr + 1 hour
     }
+
     if (iIN_RANGE(orient.adjustedAngle, 180, 185) && !FM_Done) {
       FM_Done = true;
       tmlocalTime = localtime(&epoch);
       strftime(chBuffer, sizeof(chBuffer), "%a %b %d", tmlocalTime);
       tft.drawString("Full Moon", 4, useLine, 4);
       tft.drawString(chBuffer, 170, useLine, 4); useLine += font4Height;
-      strftime(chBuffer, sizeof(chBuffer), "Full Moon %c", tmlocalTime);
-      Serial.println(chBuffer);
-      Serial.printf("Match window 180-185, matched with %d\r\n",
-                    orient.adjustedAngle);
-      epoch += (24 * 6 * 3600);
+      strftime(chBuffer, sizeof(chBuffer), "Full Moon\t%c ", tmlocalTime);
+      Serial.print(chBuffer);
+      Serial.printf("at %dº\r\n", orient.adjustedAngle);
+      epoch += 561600;  // 24 Hrs * 6.5 Days * 3600 Seconds/Hr + 1 hour
     }
+
     if (iIN_RANGE(orient.adjustedAngle, 270, 275) && !LQ_Done) {
       LQ_Done = true;
       tmlocalTime = localtime(&epoch);
       strftime(chBuffer, sizeof(chBuffer), "%a %b %d", tmlocalTime);
       tft.drawString("Last Quarter", 4, useLine, 4);
       tft.drawString(chBuffer, 170, useLine, 4); useLine += font4Height;
-      strftime(chBuffer, sizeof(chBuffer), "Last Quarter %c", tmlocalTime);
-      Serial.println(chBuffer);
-      Serial.printf("Match window 270-275, matched with %d\r\n",
-                    orient.adjustedAngle);
-      epoch += (24 * 6 * 3600);
+      strftime(chBuffer, sizeof(chBuffer), "Last Quarter\t%c ", tmlocalTime);
+      Serial.print(chBuffer);
+      Serial.printf("at %dº\r\n", orient.adjustedAngle);
+      epoch += 561600;  // 24 Hrs * 6.5 Days * 3600 Seconds/Hr + 1 hour
     }
-
-    epoch += 3600;  // advance one hour
     hoursChecked++;
-
+    epoch += 3600;  // advance one hour
   }
 
   tft.setTextColor(TFT_YELLOW, TFT_BLACK);
