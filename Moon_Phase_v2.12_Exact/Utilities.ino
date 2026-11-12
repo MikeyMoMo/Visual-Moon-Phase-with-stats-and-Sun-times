@@ -7,6 +7,8 @@ void Build_and_Show()
   static int failCount = 0;
   const int  maxFails = 3;
   static int testRotation = 0;
+  static int fetchInterval;
+  stati8 prevFetchAngle;
 
   if (iSec % 10 == 2) AddStars();
 
@@ -18,7 +20,7 @@ void Build_and_Show()
   // (iMin % 5) == 3 -> 03,08,13,18,23,28,33,38,43,48,53,58
   // (iMin % 5) == 4 -> 04,09,14,19,24,29,34,39,44,49,54,59
   //
-  // Use lane 1 so the weather fetch never collides with the
+  // Using lane 2 so the weather fetch never collides with the
   //  top-of-hour processing.
 
   // Case 1: Normal 5‑minute fetch
@@ -385,16 +387,16 @@ void ShowFuturePhases()
   tft.setTextColor(TFT_WHITE, RGB565(150, 53, 73));
   // Serial.println("Get phase dates.");
 
-  Serial.println("Times could be +/- 1 hour.");
+  Serial.println("Times could be +/- 15 minutes.");
 
   while (!(NM_Done && FQ_Done && FM_Done && LQ_Done) &&
-         hoursChecked < 750)
+         hoursChecked < 3000)
   {
     //    Serial.println(epoch);
     moonData = moonPhase.getPhase(epoch);
     angleExact = moonData.angleExact;
-    //    Serial.printf("Int %d, Exact %.2f, Lit %.2f\r\n",
-    //                  moonData.angleDeg, moonData.angleExact, moonData.amountLit);
+    //    Serial.printf("Epoch %lu, Int %d, Exact %.2f, Lit %.2f\r\n",
+    //                  epoch, moonData.angleDeg, moonData.angleExact, moonData.amountLit);
     // Adjust angle for hemisphere/latitude
     // MoonOrientation orient = AdjustedMoonAngle(moon.angleDeg, latitude, Hemisphere);
 
@@ -411,8 +413,8 @@ void ShowFuturePhases()
       tft.drawString(chBuffer, 170, useLine, 4); useLine += font4Height;
       strftime(chBuffer, sizeof(chBuffer), "New Moon\t%c ", tmlocalTime);
       Serial.print(chBuffer);
-      Serial.printf("at %.1fº\r\n", angleExact);
-      epoch += 550000;  // 24 Hrs * 6 Days * 3600 Seconds/Hr + 1 hour
+      Serial.printf("at %.1fº, Lit %.2fº\r\n", angleExact, moonData.amountLit);
+     epoch += 550000;  // 24 Hrs * 6 Days * 3600 Seconds/Hr + 1 hour
     }
 
     if (iIN_RANGE(angleExact, 90., 95.) && !FQ_Done) {
@@ -423,7 +425,7 @@ void ShowFuturePhases()
       tft.drawString(chBuffer, 170, useLine, 4); useLine += font4Height;
       strftime(chBuffer, sizeof(chBuffer), "First Quarter\t%c ", tmlocalTime);
       Serial.print(chBuffer);
-      Serial.printf("at %.1fº\r\n", angleExact);
+      Serial.printf("at %.1fº, Lit %.2fº\r\n", angleExact, moonData.amountLit);
       epoch += 550000;  // 24 Hrs * 6 Days * 3600 Seconds/Hr + 1 hour
     }
 
@@ -435,7 +437,7 @@ void ShowFuturePhases()
       tft.drawString(chBuffer, 170, useLine, 4); useLine += font4Height;
       strftime(chBuffer, sizeof(chBuffer), "Full Moon\t%c ", tmlocalTime);
       Serial.print(chBuffer);
-      Serial.printf("at %.1fº\r\n", angleExact);
+      Serial.printf("at %.1fº, Lit %.2fº\r\n", angleExact, moonData.amountLit);
       epoch += 550000;  // 24 Hrs * 6 Days * 3600 Seconds/Hr + 1 hour
     }
 
@@ -447,11 +449,11 @@ void ShowFuturePhases()
       tft.drawString(chBuffer, 170, useLine, 4); useLine += font4Height;
       strftime(chBuffer, sizeof(chBuffer), "Last Quarter\t%c ", tmlocalTime);
       Serial.print(chBuffer);
-      Serial.printf("at %.1fº\r\n", angleExact);
+      Serial.printf("at %.1fº, Lit %.2fº\r\n", angleExact, moonData.amountLit);
       epoch += 550000;  // 24 Hrs * 6 Days * 3600 Seconds/Hr + 1 hour
     }
     hoursChecked++;
-    epoch += 1800;  // advance one-half hour
+    epoch += 900;  // advance one-quarter hour
   }
   // Footer
   tft.setTextColor(TFT_YELLOW, TFT_BLACK);

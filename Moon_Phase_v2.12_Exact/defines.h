@@ -47,7 +47,7 @@ struct tm * moonTimes;
 struct tm * sunTimes;
 bool showMoon = true;
 
-#include <MoonPhase.hpp>  // #include <MoonPhase.hpp>
+#include "MoonPhase.hpp"  // #include <MoonPhase.hpp>
 MoonPhase moonPhase;      // include a MoonPhase instance
 moonData_t moonData;      // variable (struct?) to receive the data
 struct tm *tmlocalTime;

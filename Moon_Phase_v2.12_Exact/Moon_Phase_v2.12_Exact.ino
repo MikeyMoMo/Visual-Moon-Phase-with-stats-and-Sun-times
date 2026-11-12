@@ -9,6 +9,10 @@
 //   Parts of this code was either created or fixed by CoPilot and DeepSeek.               //
 //   I promised that I would double CoPilot's current salary of $0.  It was so happy.      //
 //                                                                                         //
+//   Accuracy tested against https://www.timeanddate.com/moon/phases/ .                    //
+//   Worst observed error approximately 15 minutes                                         //
+//   for primary lunar phase events.                                                       //
+//   Good enough. SHIP IT!!!                                                               //
 //                                                                                         //
 //  Notes for future Mikey and others:                                                     //
 //  - Partition table must have: spiffs,data,littlefs                                      //
@@ -317,7 +321,8 @@ void loop()
     iPrevMin = iMin;
     declination = moonDeclination(latitude, MS.moon_altitude, MS.moon_azimuth);
     hmax = maxMoonAltitude(latitude, declination, MS.moon_altitude);
-    //    Serial.printf("Moon Altitude: %6.2fº, Declination: %6.2fº, Max Altitude: %6.2fº\r\n",
+    //    Serial.printf("Moon Altitude: %6.2fº, Declination: %6.2fº, 
+    //                  Max Altitude: %6.2fº\r\n",
     //                  MS.moon_altitude, declination, hmax);
   }
 
