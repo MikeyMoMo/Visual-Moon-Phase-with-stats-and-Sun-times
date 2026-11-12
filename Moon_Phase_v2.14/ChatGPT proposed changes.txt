@@ -1,0 +1,448 @@
+# Calculate upcoming moon phases
+
+> Given the local date and time, can you create c/c++  code to calculate the moon phase.  I want to find the next four major phases by date and time.  This is for an ESP32S3.  I have some code now but it loses accuracy about 15 minutes for each week as it calculates into the future.
+
+I’ll first inspect your existing code and project guidance so the ESP32-S3 solution fits what you already have. I’ll also check a reliable astronomical reference for the phase timing method, since small errors in the model can accumulate over weeks.
+
+# Improve moon phase accuracy
+
+> You asked for the code I am currently using to calculate the moon phase.  Here it is.  I am hoping you can make it more accurate.
+>
+> moonData_t MoonPhase::\_getPhase(const int32_t year,\
+> &#x20;                               const int32_t month,\
+> &#x20;                               const int32_t day,\
+> &#x20;                               const double &hour)\
+> {\
+> &#x20;   /\*\
+> &#x20;     Calculates the phase of the moon at the given epoch.\
+> \
+> &#x20;     angleDeg   = rounded phase angle (0-359)\
+> &#x20;     angleExact = exact phase angle (0.0-360.0)\
+> &#x20;     amountLit  = illuminated fraction (0.0-1.0)\
+> &#x20;   \*/\
+> \
+> &#x20;   const double j{\
+> &#x20;       \_Julian(year, month, (double)day + hour / 24.0) - 2444238.5\
+> &#x20;   };\
+> \
+> &#x20;   const double ls{\_sun_position(j)};\
+> &#x20;   const double lm{\_moon_position(j, ls)};\
+> \
+> &#x20;   const double angle = lm - ls;\
+> \
+> &#x20;   double angleExact = wrap360(angle);\
+> &#x20;   int32_t angleDeg  = wrap360(std::lround(angle));\
+> \
+> &#x20;   return {\
+> &#x20;       angleDeg,\
+> &#x20;       angleExact,\
+> &#x20;       (1.0 - cos(angle \* DEG_TO_RAD)) / 2\
+> &#x20;   };\
+> }\
+
+<details><summary>2 previous messages</summary>
+
+> I’ll check how your Julian date and Sun/Moon position helpers are implemented, since their accuracy will determine how much this calculation can improve. I’ll also verify the phase and illumination formulas against a primary astronomy reference.
+>
+> <details><summary>Ran 3 commands, searched the web</summary>
+>
+> Searched the web for `US Naval Observatory moon phase illuminated fraction elongation phase angle formula geocentric ...`
+>
+> - Ran `rg -n "_getPhase|_Julian|_sun_position|_moon_position|wrap360|moonData_t" .`
+>
+> - Ran `Get-ChildItem -Recurse -File | Select-String -Pattern '_getPhase|_Julian|_sun_position|_moon_position|wrap360|moonData_t' | Select-Object -First 100 Path,LineNumber,Line`
+>
+> - Ran `"C:\\WINDOWS\\system32\\cmd.exe" /c 'cmd /c dir'`
+>
+> </details>
+</details>
+
+Your routine is reasonable if `_sun_position` and `_moon_position` return accurate, matching ecliptic longitudes. The main limitation is that `angle = lm - ls` is a **longitude difference**, while your illumination calculation treats it as the angle between the Sun and Moon as seen from Earth. Those angles are close, but not identical because the Moon travels above and below the ecliptic.
+
+For the phase angle, keep the longitude difference: the US Naval Observatory defines the primary phases using the Moon’s apparent ecliptic longitude minus the Sun’s. For illumination, calculate the Moon–Sun angular separation using both objects’ ecliptic latitude and longitude. [USNO phase definitions](https://aa.usno.navy.mil/faq/moon_phases)
+
+```cpp
+const double dLon = (lm - ls) * DEG_TO_RAD;
+
+// If _moon_position gives ecliptic latitude in degrees,
+// and the Sun latitude is treated as zero:
+const double betaMoon = moonLatitudeDeg * DEG_TO_RAD;
+
+const double cosElongation =
+    std::clamp(std::cos(betaMoon) * std::cos(dLon), -1.0, 1.0);
+
+const double elongation = std::acos(cosElongation);
+
+// This is a useful approximation to the illuminated fraction:
+const double amountLit = (1.0 - cosElongation) / 2.0;
+```
+
+That improves the illumination estimate, but for a more physically accurate fraction, calculate the **phase angle at the Moon** from the Sun–Earth–Moon triangle, using Sun–Earth, Earth–Moon, and Sun–Moon distances. Then use `(1 + cos(phaseAngle)) / 2`. USNO describes its illuminated fraction as a geocentric quantity. [USNO illuminated fraction](https://aa.usno.navy.mil/data/MoonFraction)
+
+The larger accuracy question is in the helper functions: their position model, coordinate frame, and time scale will usually matter more than this wrapper. I can give you a concrete replacement once you share `_Julian`, `_sun_position`, and `_moon_position`—especially how the Moon helper handles latitude and distance.
+
+> OK.  Here is the complete code.  Sorry I did not include all of it the first time.  I call getPhase from my program and it returns the variables you see in a struct.  First, the struct, then the entire code used.
+>
+> struct moonData_t\
+> {\
+> &#x20;   int32_t angleDeg;\
+> &#x20;   double  angleExact;\
+> &#x20;   double  amountLit;\
+> };\
+> &#x20;   moonData_t getPhase()\
+> &#x20;   {\
+> &#x20;       return getPhase(time(NULL));\
+> &#x20;   }\
+> \#include "MoonPhase.hpp"\
+> \
+> double MoonPhase::\_fhour(const struct tm &timeinfo)\
+> {\
+> &#x20;   return timeinfo.tm_hour + (timeinfo.tm_min \* 60 + timeinfo.tm_sec) / 3600.0;\
+> }\
+> \
+> static double \_Julian(int32_t year, int32_t month, const double &day)\
+> {\
+> &#x20;   int32_t b, c, e;\
+> &#x20;   b = 0;\
+> &#x20;   if (month < 3)\
+> &#x20;   {\
+> &#x20;       year--;\
+> &#x20;       month += 12;\
+> &#x20;   }\
+> \
+> &#x20;   // compensate for the Gregorian calender reform in 1582\
+> &#x20;   // see https\://en.wikipedia.org/wiki/Gregorian_calendar#Gregorian_reform\
+> &#x20;   if (year > 1582 || (year == 1582 && month > 10) ||\
+> &#x20;       (year == 1582 && month == 10 && day > 15))\
+> &#x20;   {\
+> &#x20;       int32_t a;\
+> &#x20;       a = year / 100;\
+> &#x20;       b = 2 - a + a / 4;\
+> &#x20;   }\
+> &#x20;   c = 365.25 \* year;\
+> &#x20;   e = 30.6001 \* (month + 1);\
+> &#x20;   return b + c + e + day + 1720994.5;\
+> }\
+> \
+> static double \_sun_position(const double &j)\
+> {\
+> &#x20;   double n, x, e, l, dl, v;\
+> &#x20;   int32_t i;\
+> &#x20;   n = 360 / 365.2422 \* j;\
+> &#x20;   i = n / 360;\
+> &#x20;   n = n - i \* 360.0;\
+> &#x20;   x = n - 3.762863;\
+> &#x20;   x += (x < 0) ? 360 : 0;\
+> &#x20;   x \*= DEG_TO_RAD;\
+> &#x20;   e = x;\
+> &#x20;   do\
+> &#x20;   {\
+> &#x20;       dl = e - .016718 \* sin(e) - x;\
+> &#x20;       e = e - dl / (1 - .016718 \* cos(e));\
+> &#x20;   } while (fabs(dl) >= 1e-12);\
+> &#x20;   v = 360 / PI \* atan(1.01686011182 \* tan(e / 2));\
+> &#x20;   l = v + 282.596403;\
+> &#x20;   i = l / 360;\
+> &#x20;   l = l - i \* 360.0;\
+> &#x20;   return l;\
+> }\
+> \
+> static double \_moon_position(const double &j, const double &ls)\
+> {\
+> &#x20;   double ms, l, mm, ev, sms, ae, ec;\
+> &#x20;   int32_t i;\
+> &#x20;   ms = 0.985647332099 \* j - 3.762863;\
+> &#x20;   ms += (ms < 0) ? 360.0 : 0;\
+> &#x20;   l = 13.176396 \* j + 64.975464;\
+> &#x20;   i = l / 360;\
+> &#x20;   l = l - i \* 360.0;\
+> &#x20;   l += (l < 0) ? 360 : 0;\
+> &#x20;   mm = l - 0.1114041 \* j - 349.383063;\
+> &#x20;   i = mm / 360;\
+> &#x20;   mm -= i \* 360.0;\
+> &#x20;   ev = 1.2739 \* sin((2 \* (l - ls) - mm) \* DEG_TO_RAD);\
+> &#x20;   sms = sin(ms \* DEG_TO_RAD);\
+> &#x20;   ae = 0.1858 \* sms;\
+> &#x20;   mm += ev - ae - 0.37 \* sms;\
+> &#x20;   ec = 6.2886 \* sin(mm \* DEG_TO_RAD);\
+> &#x20;   l += ev + ec - ae + 0.214 \* sin(2 \* mm \* DEG_TO_RAD);\
+> &#x20;   l = 0.6583 \* sin(2 \* (l - ls) \* DEG_TO_RAD) + l;\
+> &#x20;   return l;\
+> }\
+> \
+> static int32_t wrap360(int32_t deg)\
+> {\
+> &#x20;   deg %= 360;\
+> &#x20;   return (deg < 0) ? deg + 360 : deg;\
+> }\
+> \
+> static double wrap360(double deg)\
+> {\
+> &#x20;   deg = fmod(deg, 360.0);\
+> &#x20;   return (deg < 0.0) ? deg + 360.0 : deg;\
+> }\
+> \
+> //moonData_t MoonPhase::\_getPhase(const int32_t year, const int32_t month, const int32_t day, const double &hour)\
+> //{\
+> //    /\*\
+> //      Calculates the phase of the moon at the given epoch.\
+> //      returns the moon phase angle as an int (0-360)\
+> //      returns the amount that is lit as a real number (0.0-1.0)\
+> //    \*/\
+> //    const double j{\_Julian(year, month, (double)day + hour / 24.0) - 2444238.5};\
+> //    const double ls{\_sun_position(j)};\
+> //    const double lm{\_moon_position(j, ls)};\
+> //    double angle = lm - ls;\
+> //    int32_t angleDeg = wrap360(std::lround(angle));\
+> //    return {angleDeg, (1.0 - cos((lm - ls) \* DEG_TO_RAD)) / 2};\
+> //}\
+> \
+> moonData_t MoonPhase::\_getPhase(const int32_t year,\
+> &#x20;                               const int32_t month,\
+> &#x20;                               const int32_t day,\
+> &#x20;                               const double &hour)\
+> {\
+> &#x20;   /\*\
+> &#x20;     Calculates the phase of the moon at the given epoch.\
+> \
+> &#x20;     angleDeg   = rounded phase angle (0-359)\
+> &#x20;     angleExact = exact phase angle (0.0-360.0)\
+> &#x20;     amountLit  = illuminated fraction (0.0-1.0)\
+> &#x20;   \*/\
+> \
+> &#x20;   const double j{\
+> &#x20;       \_Julian(year, month, (double)day + hour / 24.0) - 2444238.5\
+> &#x20;   };\
+> \
+> &#x20;   const double ls{\_sun_position(j)};\
+> &#x20;   const double lm{\_moon_position(j, ls)};\
+> \
+> &#x20;   const double angle = lm - ls;\
+> \
+> &#x20;   double angleExact = wrap360(angle);\
+> &#x20;   int32_t angleDeg  = wrap360(std::lround(angle));\
+> \
+> &#x20;   return {\
+> &#x20;       angleDeg,\
+> &#x20;       angleExact,\
+> &#x20;       (1.0 - cos(angle \* DEG_TO_RAD)) / 2\
+> &#x20;   };\
+> }\
+
+<details><summary>1 previous message</summary>
+
+> Thanks, this fills in the important context. I can see one definite Julian-date precision issue and a couple of edge cases in the date and angle handling. I’ll turn those into a drop-in revision while keeping your existing struct and public interface.
+</details>
+
+There’s a definite accuracy problem in `_Julian`: `c` and `e` are integers, so their fractional day contributions are discarded. That can shift the date by close to a day—far more than the smaller errors in the Sun and Moon position formulas.
+
+Replace `_Julian` with this version. It keeps the Gregorian reform handling but uses `double` values and `floor` for the calendar terms:
+
+```cpp
+static double _Julian(int32_t year, int32_t month, double day)
+{
+    int32_t a = year;
+    int32_t m = month;
+
+    if (m < 1 || m > 12)
+        return std::numeric_limits<double>::quiet_NaN();
+
+    if (m <= 2)
+    {
+        --a;
+        m += 12;
+    }
+
+    double b = 0.0;
+
+    // Gregorian calendar began on 1582-10-15.
+    const bool gregorian =
+        a > 1582 ||
+        (a == 1582 && m > 10) ||
+        (a == 1582 && m == 10 && day >= 15.0);
+
+    if (gregorian)
+    {
+        const double century = std::floor(a / 100.0);
+        b = 2.0 - century + std::floor(century / 4.0);
+    }
+
+    const double c = std::floor(365.25 * (a + 4716));
+    const double e = std::floor(30.6001 * (m + 1));
+
+    return b + c + e + day - 1524.5;
+}
+```
+
+This is the standard Julian Date form. The current code’s constant and year handling are also inconsistent with that form, so the replacement should be used together with your existing subtraction of `2444238.5`.
+
+I’d also make two small changes in `_getPhase`:
+
+```cpp
+const double angleExact = wrap360(lm - ls);
+const int32_t angleDeg =
+    wrap360(static_cast<int32_t>(std::lround(angleExact)));
+
+const double amountLit =
+    std::clamp((1.0 - std::cos(angleExact * DEG_TO_RAD)) / 2.0,
+               0.0, 1.0);
+```
+
+This keeps the returned values in range and uses the same wrapped angle consistently. Your illumination formula remains an approximation because `_moon_position` returns longitude only. A better illuminated fraction needs the Moon’s ecliptic latitude and its distance from Earth; the US Naval Observatory treats illuminated fraction as a geocentric calculation. [USNO illuminated fraction](https://aa.usno.navy.mil/data/MoonFraction)
+
+Your `angleExact` is in `[0, 360)`, so its comment should say that rather than `0.0–360.0`. The phase angle itself is based on the difference in apparent ecliptic longitudes, which is the convention used to define new, quarter, and full Moon. [USNO phase definitions](https://aa.usno.navy.mil/faq/moon_phases)
+
+One remaining limit: this fixes the calendar arithmetic, but the compact Sun and Moon formulas are still simplified position models. I’d need to replace those as well to make a substantial further accuracy improvement.
+
+> Please replace those two routines with refined routines with higher accuracy.
+
+<details><summary>2 previous messages</summary>
+
+> I’ll replace the compact approximations with Meeus-style routines. The Moon routine needs more terms than the Sun routine to improve the longitude estimate, so I’m checking the coefficients and time scale before I give you code you can drop in.
+>
+> <details><summary>Searched the web</summary>
+>
+> Searched the web for `Meeus table 47.A lunar longitude periodic terms coefficients 60 terms ...`
+>
+> Searched the web for `'def lunar_longitude'`
+>
+> </details>
+</details>
+
+These replacements use Meeus-style solar longitude and a 30-term lunar longitude series. They’re a substantial improvement over the compact routines you shared, while keeping your existing `_sun_position(j)` and `_moon_position(j, ls)` signatures. The lunar series uses the principal periodic terms from Meeus’s lunar theory; its accuracy is still lower than the full 60-term series. [Meeus series reference](https://github.com/pyTMD/pyTMD/blob/main/pyTMD/astro.py)
+
+Replace both routines, and add the `wrap360` helper if you don’t already have it:
+
+```cpp
+static double wrap360(double deg)
+{
+    deg = std::fmod(deg, 360.0);
+    return (deg < 0.0) ? deg + 360.0 : deg;
+}
+
+static double _sun_position(const double &j)
+{
+    // j is days from JD 2444238.5, the epoch used by _getPhase().
+    const double jd = j + 2444238.5;
+    const double T = (jd - 2451545.0) / 36525.0;
+
+    const double L0 = wrap360(
+        280.46646 + T * (36000.76983 + 0.0003032 * T));
+
+    const double M = wrap360(
+        357.52911 + T * (35999.05029 - 0.0001537 * T));
+
+    const double Mrad = M * DEG_TO_RAD;
+
+    const double C =
+        (1.914602 - T * (0.004817 + 0.000014 * T)) * std::sin(Mrad)
+        + (0.019993 - 0.000101 * T) * std::sin(2.0 * Mrad)
+        + 0.000289 * std::sin(3.0 * Mrad);
+
+    const double trueLongitude = L0 + C;
+    const double omega = (125.04 - 1934.136 * T) * DEG_TO_RAD;
+
+    // Apparent geocentric ecliptic longitude, degrees.
+    return wrap360(trueLongitude - 0.00569 - 0.00478 * std::sin(omega));
+}
+
+static double _moon_position(const double &j, const double & /*ls*/)
+{
+    // Meeus-style periodic series for geocentric lunar ecliptic longitude.
+    // Coefficients are in 1e-6 degrees.
+    struct Term
+    {
+        int8_t d, m, mp, f;
+        int32_t longitude;
+    };
+
+    static constexpr Term terms[] = {
+        { 0,  0,  1,  0,  6288774},
+        { 2,  0, -1,  0,  1274027},
+        { 2,  0,  0,  0,   658314},
+        { 0,  0,  2,  0,   213618},
+        { 0,  1,  0,  0,  -185116},
+        { 0,  0,  0,  2,  -114332},
+        { 2,  0, -2,  0,    58793},
+        { 2, -1, -1,  0,    57066},
+        { 2,  0,  1,  0,    53322},
+        { 2, -1,  0,  0,    45758},
+        { 0,  1, -1,  0,   -40923},
+        { 1,  0,  0,  0,   -34720},
+        { 0,  1,  1,  0,   -30383},
+        { 2,  0,  0, -2,    15327},
+        { 0,  0,  1,  2,   -12528},
+        { 0,  0,  1, -2,    10980},
+        { 4,  0, -1,  0,    10675},
+        { 0,  0,  3,  0,    10034},
+        { 4,  0, -2,  0,     8548},
+        { 2,  1, -1,  0,    -7888},
+        { 2,  1,  0,  0,    -6766},
+        { 1,  0, -1,  0,    -5163},
+        { 1,  1,  0,  0,     4987},
+        { 2, -1,  1,  0,     4036},
+        { 2,  0,  2,  0,     3994},
+        { 4,  0,  0,  0,     3861},
+        { 2,  0, -3,  0,     3665},
+        { 0,  1, -2,  0,    -2689},
+        { 2,  0, -1,  2,    -2602},
+        { 2, -1, -2,  0,     2390},
+    };
+
+    const double jd = j + 2444238.5;
+    const double T = (jd - 2451545.0) / 36525.0;
+    const double T2 = T * T;
+    const double T3 = T2 * T;
+    const double T4 = T3 * T;
+
+    const double Lp = wrap360(
+        218.3164477 + 481267.88123421 * T
+        - 0.0015786 * T2 + T3 / 538841.0 - T4 / 65194000.0);
+
+    const double D = wrap360(
+        297.8501921 + 445267.1114034 * T
+        - 0.0018819 * T2 + T3 / 545868.0 - T4 / 113065000.0);
+
+    const double M = wrap360(
+        357.5291092 + 35999.0502909 * T
+        - 0.0001536 * T2 + T3 / 24490000.0);
+
+    const double Mp = wrap360(
+        134.9633964 + 477198.8675055 * T
+        + 0.0087414 * T2 + T3 / 69699.0 - T4 / 14712000.0);
+
+    const double F = wrap360(
+        93.2720950 + 483202.0175233 * T
+        - 0.0036539 * T2 - T3 / 3526000.0 + T4 / 863310000.0);
+
+    const double E = 1.0 - 0.002516 * T - 0.0000074 * T2;
+
+    double sum = 0.0;
+    for (const Term &term : terms)
+    {
+        const double arg =
+            (term.d * D + term.m * M + term.mp * Mp + term.f * F)
+            * DEG_TO_RAD;
+
+        double factor = 1.0;
+        if (std::abs(term.m) == 1)
+            factor = E;
+        else if (std::abs(term.m) == 2)
+            factor = E * E;
+
+        sum += factor * term.longitude * std::sin(arg);
+    }
+
+    const double A1 = (119.75 + 131.849 * T) * DEG_TO_RAD;
+    const double A2 = (53.09 + 479264.290 * T) * DEG_TO_RAD;
+
+    // Small additive terms from the lunar longitude series.
+    sum += 3958.0 * std::sin(A1)
+         + 1962.0 * std::sin((Lp - F) * DEG_TO_RAD)
+         + 318.0 * std::sin(A2);
+
+    return wrap360(Lp + sum / 1000000.0);
+}
+```
+
+This preserves your existing output fields. `angleExact` remains the wrapped difference between the returned longitudes. This lunar routine still returns longitude only; it does not calculate lunar latitude or distance, which are needed for a more exact illuminated fraction. Also, these formulas conventionally use Terrestrial Time; your `time(NULL)` input is UTC, so their time-scale accuracy is limited by that small difference.
