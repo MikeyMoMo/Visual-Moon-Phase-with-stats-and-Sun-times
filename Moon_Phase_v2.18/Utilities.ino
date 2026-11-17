@@ -1047,8 +1047,8 @@ float maxMoonAltitude(float latitude, float fDeclination)
 float ComputeArrow(float altitude, float maxAltitude)
 /*******************************************************************************************/
 {
-  float prevAlt = 0.0f;
-  bool wasRising = true;
+  static float prevAlt = 0.0f;
+  static bool wasRising = true;
   MoonQuadrant quad = RISE_TO_MAX;
   bool rising;
   float pct, rot;
