@@ -91,7 +91,7 @@ enum MoonQuadrant
 };
 
 struct  tm timeinfo;
-int     iGotArrowInfo = 0;
+int     iGotAstronomyNumbers = 0;
 int     iPrevSec = -1;  // One second gate.
 int     iDOM, iMonth, iYear, iHour, iPrevMin = -1, iMin, iSec;
 int     brightness;

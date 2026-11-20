@@ -121,7 +121,7 @@ void setup()
     Serial.printf("There are only %d pix in LittleFS.  Should be 181. "
                   "Expect trouble.\r\n", pixInLittleFS);
   else
-    Serial.printf("LittleFS Initialization done. There are %i pics loaded. Correct!\r\n",
+    Serial.printf("LittleFS Initialization done. There are %i pics loaded.\r\n",
                   pixInLittleFS);  // Whew!
   Serial.flush();
 
@@ -240,7 +240,7 @@ void setup()
   tft.drawString("Moon Phase v" + sVer, tft.width() / 2, dispLine2, 4);
   tft.drawString("Get Astronomy values", tft.width() / 2, dispLine4, 4);
   tft.setTextDatum(TL_DATUM);
-  GetMS_Values();
+  GetMoonData();
   Build_and_Show();  // It is all done here.
   Serial.println("\r\nSetup is finished.");
 }

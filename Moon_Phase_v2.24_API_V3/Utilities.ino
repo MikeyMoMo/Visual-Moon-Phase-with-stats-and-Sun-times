@@ -27,9 +27,9 @@ void Build_and_Show()
   // Case 1: Normal 5‑minute fetch
   if (!lastFetchFailed && (iMin % 5 == 2) && (iPrev_PA_min != iMin)) {
     // Serial.printf("Attempting PA fetch at %02d:%02d:%02d...\r\n", iHour, iMin, iSec);
-    if (GetMS_Values()) {
+    if (GetMoonData()) {
       // Serial.println(". Fetch succeeded.");
-      iGotArrowInfo++;
+      iGotAstronomyNumbers++;
       lastFetchFailed = false;
       failCount = 0;
       iPrev_PA_min = iMin;
@@ -51,9 +51,9 @@ void Build_and_Show()
   // Case 2: Retry after a failure — on next minute change
   else if (lastFetchFailed && (iPrev_PA_min != iMin)) {
     Serial.printf("Retry attempt %d at %02d:%02d...", failCount, iHour, iMin);
-    if (GetMS_Values()) {
+    if (GetMoonData()) {
       Serial.printf("PA Fetch Retry %d succeeded.\r\n", failCount);
-      iGotArrowInfo++;
+      iGotAstronomyNumbers++;
       lastFetchFailed = false;
       failCount = 0;
       iPrev_PA_min = iMin;
@@ -193,10 +193,12 @@ void Build_and_Show()
       tft.drawString(chBuffer, 170, dispLine3, 4);
 
     */
-    floatwork = strtof(moon_illum_percentage, NULL);
-    snprintf(illumBuffer, sizeof(illumBuffer), " (%.1f%%)", floatwork);
     String phaseText = MoonPhaseLabel(moonData.angleDeg);
-    phaseText += illumBuffer;
+    if (iGotAstronomyNumbers > 0) {
+      floatwork = strtof(moon_illum_percentage, NULL);
+      snprintf(illumBuffer, sizeof(illumBuffer), " (%.1f%%)", floatwork);
+      phaseText += illumBuffer;
+    }
     spriteBG.drawString(phaseText, 6, dispLine6 + 5, 4);
   } else {
     tft.setTextDatum(TL_DATUM);
@@ -223,7 +225,7 @@ void Build_and_Show()
   // Without this delay, the arrow can point into quadrant 0 for up to 10 minutes
   //  during startup because prevAlt is still uninitialized.
 
-  if (iGotArrowInfo > 0) { // If rotation info retrieved and calculated...
+  if (iGotAstronomyNumbers > 0) { // If rotation info retrieved and calculated...
     snprintf(illumBuffer, sizeof(illumBuffer), "Dir:%s",
              DegreesToCompass8(moon_azimuth));
     spriteBG.setTextColor(TFT_WHITE, RGB565(0, 0, 166));
@@ -235,7 +237,7 @@ void Build_and_Show()
     }
   }
 
-  if (iGotArrowInfo > 1) { // If rotation info retrieved and calculated...
+  if (iGotAstronomyNumbers > 1) { // If rotation info retrieved and calculated...
     spriteARot.fillSprite(SpriteDarkBlueBG);  // Dark background blue
     spriteAR.pushRotated(&spriteARot, fArrowRot, SpriteDarkBlueBG);
     spriteARot.pushToSprite(&spriteBG, 288, 105);
@@ -1032,12 +1034,12 @@ void debugTime()
   Serial.printf("%02i:%02i:%02i - ", iHour, iMin, iSec);
 }
 /*******************************************************************************************/
-bool GetMS_Values()
+bool GetMoonData()
 /*******************************************************************************************/
 {
   static bool rc;
 
-  rc = parseMoonStruck(apiKey, latitude, longitude);
+  rc = parseMoonData(apiKey, latitude, longitude);
   if (rc != 0)
     return false;
   else
@@ -1212,12 +1214,12 @@ const char* DegreesToCompass8(float degrees)
   return dir[iCompassIndex];
 }
 /*******************************************************************************************/
-int parseMoonStruck(char* _KEY, float _LAT, float _LON)
+int parseMoonData(char* _KEY, float _LAT, float _LON)
 /*******************************************************************************************/
 {
   int error_code;
 
-  sprintf(moonURL, "https://api.ipgeolocation.io/astronomy?apiKey=%s&lat=%f&long=%f",
+  sprintf(moonURL, "https://api.ipgeolocation.io/v3/astronomy?apiKey=%s&lat=%f&long=%f",
           _KEY, _LAT, _LON);
 
   //  Serial.println("Calling URL: ");
@@ -1244,7 +1246,7 @@ int parseMoonStruck(char* _KEY, float _LAT, float _LON)
 
   }
   String payload = http.getString();
-  //  Serial.println("api.ipgeolocation.io/astronomy Return Packet");
+  //  Serial.println("api.ipgeolocation.io/v3/astronomy Return Packet");
   //  Serial.println(payload);
 
   // String input;
@@ -1261,66 +1263,53 @@ int parseMoonStruck(char* _KEY, float _LAT, float _LON)
 
   // First, the character variables
 
-  const char* location_latitudeL = doc["location"]["latitude"] | ""; // "18.19121"
-  strlcpy(location_latitude, location_latitudeL, sizeof(location_latitude));
+  JsonObject location = doc["location"];
 
-  const char* location_longitudeL = doc["location"]["longitude"] | ""; // "120.55044"
-  strlcpy(location_longitude, location_longitudeL, sizeof(location_longitude));
+  const char* location_latitudeL  = location["latitude"]  | "";  // "18.19121"
+  const char* location_longitudeL = location["longitude"] | "";  // "120.55044"
+
+  JsonObject astronomy = doc["astronomy"];
 
   // Small change for astronomy v3 to look inside ["astronomy"] for date and time.
-  const char* current_dateL = doc["astronomy"]["date"] | "";         // "2025-06-30" (ISO8601 format that Excel loves)
-  strlcpy(current_date, current_dateL, sizeof(current_date));
-
-  const char* current_timeL = doc["astronomy"]["current_time"] | ""; // "16:05:59.374"
-  strlcpy(current_time, current_timeL, sizeof(current_time));
-
-  // The original astronomy info had date and time in the top level.
-  //  current_date = doc["date"].as<String>();         // "2025-06-30" (ISO8601 format that Excel loves)
-  //  current_time = doc["current_time"].as<String>(); // "16:05:59.374"
-
   // Change per "https://arduinojson.org/v7/assistant" is to change to using "const char*"
-  //  to receive textual elements.  It was:
+  const char * current_dateL = astronomy["date"] | "";          // "2025-06-30" (ISO8601 format that Excel loves)
+  const char * current_timeL = astronomy["current_time"] | "";  // "16:05:59.374"
+  const char * sunriseL      = astronomy["sunrise"] | "";       // "05:25"
+  const char * sunsetL       = astronomy["sunset"] | "";        // "18:37"
+  const char * sun_statusL   = astronomy["sun_status"] | "";    // "-"
+  const char * solar_noonL   = astronomy["solar_noon"] | "";    // "12:01"
+  const char * day_lengthL   = astronomy["day_length"] | "";    // "13:12"
+  const char * moonriseL     = astronomy["moonrise"] | "";      // "09:50"
+  const char * moonsetL      = astronomy["moonset"] | "";       // "22:33"
+  const char * moon_statusL  = astronomy["moon_status"] | "";   // "-"
+  const char * moon_phaseL   = astronomy["moon_phase"] | "";    // "WAXING_CRESCENT"
+  const char * moon_illum_percentageL = astronomy["moon_illumination_percentage"] | ""; // "26.53"
 
-  const char * sunriseL = doc["sunrise"] | "";           // "05:25"
+  // Do the copy outs
+  strlcpy(location_longitude, location_longitudeL, sizeof(location_longitude));
+  strlcpy(location_latitude, location_latitudeL, sizeof(location_latitude));
+  strlcpy(current_time, current_timeL, sizeof(current_time));
+  strlcpy(current_date, current_dateL, sizeof(current_date));
   strlcpy(sunrise, sunriseL, sizeof(sunrise));
-
-  const char * sunsetL = doc["sunset"] | "";             // "18:37"
   strlcpy(sunset, sunsetL, sizeof(sunset));
-
-  const char * sun_statusL = doc["sun_status"] | "";     // "-"
   strlcpy(sun_status, sun_statusL, sizeof(sun_status));
-
-  const char * solar_noonL = doc["solar_noon"] | "";     // "12:01"
   strlcpy(solar_noon, solar_noonL, sizeof(solar_noon));
-
-  const char * day_lengthL = doc["day_length"] | "";     // "13:12"
   strlcpy(day_length, day_lengthL, sizeof(day_length));
-
-  const char * moonriseL = doc["moonrise"] | "";         // "09:50"
   strlcpy(moonrise, moonriseL, sizeof(moonrise));
-
-  const char * moonsetL = doc["moonset"] | "";           // "22:33"
   strlcpy(moonset, moonsetL, sizeof(moonset));
-
-  const char * moon_statusL = doc["moon_status"] | "";   // "-"
   strlcpy(moon_status, moon_statusL, sizeof(moon_status));
-
-  const char * moon_phaseL = doc["moon_phase"] | "";     // "WAXING_CRESCENT"
   strlcpy(moon_phase, moon_phaseL, sizeof(moon_phase));
-
-  const char * moon_illum_percentageL = doc["moon_illumination_percentage"] | ""; // "26.53"
   strlcpy(moon_illum_percentage, moon_illum_percentageL, sizeof(moon_illum_percentage));
 
   // Then the numeric variables
-
-  sun_altitude = doc["sun_altitude"];              // 33.009196129845215
-  sun_azimuth = doc["sun_azimuth"];                // 286.2520179561225
-  sun_distance = doc["sun_distance"];              // 152082740.2434402
-  moon_altitude = doc["moon_altitude"];            // 79.98075904963498
-  moon_distance = doc["moon_distance"];            // 391324.0794163109
-  moon_azimuth = doc["moon_azimuth"];              // 168.85244425102178
-  moon_angle = doc["moon_angle"];                  // 62.00725976252736
-  moon_parallactic_angle = doc["moon_parallactic_angle"];             // -10.698513848203067
+  sun_altitude  = astronomy["sun_altitude"];   // 33.009196129845215
+  sun_azimuth   = astronomy["sun_azimuth"];    // 286.2520179561225
+  sun_distance  = astronomy["sun_distance"];   // 152082740.2434402
+  moon_altitude = astronomy["moon_altitude"];  // 79.98075904963498
+  moon_distance = astronomy["moon_distance"];  // 391324.0794163109
+  moon_azimuth  = astronomy["moon_azimuth"];   // 168.85244425102178
+  moon_angle    = astronomy["moon_angle"];     // 62.00725976252736
+  moon_parallactic_angle = astronomy["moon_parallactic_angle"];  // -10.690759049458498
 
   http.end();
   return 0;
