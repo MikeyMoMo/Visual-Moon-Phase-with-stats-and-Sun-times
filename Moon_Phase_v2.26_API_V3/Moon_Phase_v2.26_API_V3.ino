@@ -1,5 +1,7 @@
 //*****************************************************************************************//
-//   Created by Mike Morrow on May 10th, 2025. GitHub: MikeyMoMo                           //
+//   Created by Mike Morrow on May 10, 2025.
+//   Finished approximately 18 months later.
+//   The Moon put up a fight.
 //                                                                                         //
 //   The latest update will be available on GitHub.                                        //
 //                                                                                         //

@@ -205,7 +205,7 @@ char   moonrise[10]; // "15:29"
 char   moonset[10]; // "05:56"
 char   moon_status[50]; // "-" or ???
 char   moon_phase[30];  // "WAXING_CRESCENT"
-char   moon_illum_percentage[10];  // "26.53"
+char   moon_illum_pct[10];  // "26.53"
 double moon_altitude; // -18.923851294326536
 double moon_distance; // 397569.6133900794
 double moon_azimuth; // 33.592474665393695
@@ -269,6 +269,19 @@ char moonURL[200];
     All of that stuff goes right onto the spriteBG and when I am done with the text, I
     throw spriteBG on the screen for the happy users to see and watch the stars scroll by.
 
+    Well, there is something to see here.  Calculating the direction of the moon arrow
+    was not easy!  There are problems in that the same altitude is reported twice per
+    earth revolution.  So the circle had to be divided into 4 quadrants.  Two for moon
+    visible and two for moon obscured by earth.  Then the direction of movement was used
+    to device between the two quadrants.  Then the elevation was transmuted into an angle
+    for point the little arrrow.  For being so small, that dude was a pain to get right!
+
+    Also note that the arrow points to a vertical compass with north in the sky, directly
+    overhead.  The textual compass direction uses a compass on the surface of the earth and
+    point to where to look in the sky for the moon, considering the arrow saying where it is.
+    Those two directions will locate the moon for you, easily.  Or, you could go outside and
+    just look at the sky.  Take your pick!
+    
     This all happens every second and, last time I checked, takes about 60 ms.
     That's very little of the one second I have to wait to do the next update so
     there is lots of just waiting around...

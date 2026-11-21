@@ -26,7 +26,8 @@ void Build_and_Show()
 
   // Case 1: Normal 5‑minute fetch
   if (!lastFetchFailed && (iMin % 5 == 2) && (iPrev_PA_min != iMin)) {
-    // Serial.printf("Attempting PA fetch at %02d:%02d:%02d...\r\n", iHour, iMin, iSec);
+    // Serial.printf("Attempting PA fetch at %02d:%02d:%02d...\r\n",
+    //               iHour, iMin, iSec);
     if (GetMoonData()) {
       // Serial.println(". Fetch succeeded.");
       iGotAstronomyNumbers++;
@@ -38,7 +39,8 @@ void Build_and_Show()
       fMinAltitude = minMoonAltitude(latitude, fDeclination);
       fArrowRot = ComputeArrow(moon_altitude);
       // debugTime();
-      // Serial.printf("MS Returned: MS Moon Alt %.2f, MS Moon Angle %.2f, MS Moon Az %.2f\r\n",
+      // Serial.printf("MS Returned: MS Moon Alt %.2f, MS Moon Angle %.2f,
+      //               MS Moon Az %.2f\r\n",
       //               moon_altitude, moon_angle, moon_azimuth);
     } else {
       Serial.println("Fetch of PA failed. Will retry every minute.");
@@ -135,8 +137,9 @@ void Build_and_Show()
     moonEventEpoch = localtime(&mr.riseTime);
     strftime(chBuffer, sizeof(chBuffer), "%T", moonEventEpoch);
 
-    // If the rise time is more than a day away, I change the label and value to yellow.
-    // I think it is obvious enough that it is tomorrow so I dropped off the red coloration.
+    // If the rise time is more than a day away, I change the label and
+    //  value to yellow.  I think it is obvious enough that it is tomorrow
+    //  so I dropped off the red coloration.
 
     if ((mr.riseTime - now) > 86400)
       spriteBG.setTextColor(TFT_YELLOW, RGB565(0, 0, 166));
@@ -156,9 +159,6 @@ void Build_and_Show()
     mr.calculate(latitude, longitude, now + 86400);  // Check tomorrow
     moonEventEpoch = localtime(&mr.setTime);
     strftime(chBuffer, sizeof(chBuffer), "%T", moonEventEpoch);
-
-    // If the rise time is more than a day away, I change the label and value to yellow.
-    // I think it is obvious enough that it is tomorrow so I dropped off the red coloration.
 
     if ((mr.setTime - now) > 86400)
       //      spriteBG.setTextColor(TFT_RED, RGB565(0, 0, 166));
@@ -195,7 +195,7 @@ void Build_and_Show()
     */
     String phaseText = MoonPhaseLabel(moonData.angleDeg);
     if (iGotAstronomyNumbers > 0) {
-      floatwork = strtof(moon_illum_percentage, NULL);
+      floatwork = strtof(moon_illum_pct, NULL);
       snprintf(illumBuffer, sizeof(illumBuffer), " (%d%%)", int(floatwork));
       phaseText += illumBuffer;
     }
@@ -538,7 +538,7 @@ void doMenu()
             return;
 
           case 2:  // Show Sun Rise/Set Times
-            ShowsunEventEpoch();
+            ShowSunEventEpoch();
             while ((digitalRead(topButton) == BUTTON_NOT_PRESSED) &&
                    (digitalRead(bottomButton) == BUTTON_NOT_PRESSED));
             while ((digitalRead(topButton) == BUTTON_PRESSED) ||
@@ -822,7 +822,7 @@ void showInputOptionsFull()
   Serial.println("If you make an unknown entry, this list is printed on the monitor.\r\n");
 }
 /*******************************************************************************************/
-void ShowsunEventEpoch()
+void ShowSunEventEpoch()
 /*******************************************************************************************/
 {
   static time_t riseEpoch, setEpoch, upTime;
@@ -922,7 +922,7 @@ void initTime()
     iYear = atoi(chBuffer);
     if (iLooper++ > 30) {
       Serial.println("\r\nCannot get time set. Rebooting.");
-      ESP.restart();
+      //      ESP.restart();  // Claude fix
       if (iLooper % 5 == 0) {
         Serial.println("Restarting sNTP to issue new request.");
         sntp_restart();
@@ -1037,13 +1037,15 @@ void debugTime()
 bool GetMoonData()
 /*******************************************************************************************/
 {
-  static bool rc;
+  //  static bool rc;
 
-  rc = parseMoonData(apiKey, latitude, longitude);
-  if (rc != 0)
-    return false;
-  else
-    return true;
+  return (parseMoonData(apiKey, latitude, longitude) == 200);
+
+  //  rc = parseMoonData(apiKey, latitude, longitude);
+  //  if (rc != 0)
+  //    return false;
+  //  else
+  //    return true;
 }
 /*******************************************************************************************/
 // Given:   latitude (phi), altitude (h), azimuth (A)
@@ -1086,9 +1088,9 @@ float ComputeArrow(float altitude)
   bool rising;
   float pct, rot;
 
-  // Serial.printf(
-  //   "ComputeArrow start Alt %.2f, maxAltitude %.2f, minAltitude %.2f, prevAlt %.2f\r\n",
-  //   altitude, fMaxAltitude, fMinAltitude, prevAlt);
+  //  Serial.printf(
+  //    "ComputeArrow start Alt %.2f, maxAltitude %.2f, minAltitude %.2f, prevAlt %.2f\r\n",
+  //    altitude, fMaxAltitude, fMinAltitude, prevAlt);
 
   rising = (altitude > prevAlt);
 
@@ -1099,7 +1101,6 @@ float ComputeArrow(float altitude)
   // Detect horizon crossings
   if (prevAlt >= 0.0f && altitude < 0.0f) quad = SET_TO_MIN;
   if (prevAlt <= 0.0f && altitude > 0.0f) quad = RISE_TO_MAX;
-  //  pct = constrain(fabs(altitude) / fMaxAltitude, 0.0f, 1.0f);
 
   switch (quad)
   {
@@ -1130,10 +1131,10 @@ float ComputeArrow(float altitude)
     default: rot = 0.0f; break;
   }
 
-  // Serial.printf("Results of ComputeArrow: Quadrant %d, Rotation %.2f, prevAlt %.2f\r\n",
-  //               quad, rot, prevAlt);
-  // Serial.printf("Alt % .2f Prev % .2f Rising % d WasRising % d Quad % d Rot % .2f\r\n",
-  //               altitude, prevAlt, rising, wasRising, quad, rot);
+  //  Serial.printf("Results of ComputeArrow: Quadrant %d, Rotation %.2f, prevAlt %.2f\r\n",
+  //                quad, rot, prevAlt);
+  //  Serial.printf("Alt % .2f Prev % .2f Rising % d WasRising % d Quad % d Rot % .2f\r\n",
+  //                altitude, prevAlt, rising, wasRising, quad, rot);
 
   prevAlt = altitude;
   wasRising = rising;
@@ -1217,7 +1218,7 @@ const char* DegreesToCompass8(float degrees)
 int parseMoonData(char* _KEY, float _LAT, float _LON)
 /*******************************************************************************************/
 {
-  int error_code;
+  int error_code = 0;  // Claude fix
 
   sprintf(moonURL, "https://api.ipgeolocation.io/v3/astronomy?apiKey=%s&lat=%f&long=%f",
           _KEY, _LAT, _LON);
@@ -1231,20 +1232,22 @@ int parseMoonData(char* _KEY, float _LAT, float _LON)
   //  Serial.printf("httpCode return code: %d\r\n", httpCode);
   if (httpCode > 399)
   {
-    if (httpCode == 404)
-    {
-      http.end();
-      error_code += 4;
-      return error_code;
-    }
-    else
-    {
-      http.end();
-      error_code += 5;
-      return error_code;
-    }
-
+    //    if (httpCode == 404)
+    //    {
+    //      http.end();
+    //      error_code += 4;
+    //      return error_code;
+    //    }
+    //    else
+    //    {
+    //      http.end();
+    //      error_code += 5;
+    //      return error_code;
+    //    }
+    http.end();
+    return httpCode;
   }
+
   String payload = http.getString();
   //  Serial.println("api.ipgeolocation.io/v3/astronomy Return Packet");
   //  Serial.println(payload);
@@ -1272,7 +1275,8 @@ int parseMoonData(char* _KEY, float _LAT, float _LON)
 
   // Small change for astronomy v3 to look inside ["astronomy"] for date and time.
   // Change per "https://arduinojson.org/v7/assistant" is to change to using "const char*"
-  const char * current_dateL = astronomy["date"] | "";          // "2025-06-30" (ISO8601 format that Excel loves)
+  // The following is in ISO8601 format that Excel loves.
+  const char * current_dateL = astronomy["date"] | "";          // "2025-06-30"
   const char * current_timeL = astronomy["current_time"] | "";  // "16:05:59.374"
   const char * sunriseL      = astronomy["sunrise"] | "";       // "05:25"
   const char * sunsetL       = astronomy["sunset"] | "";        // "18:37"
@@ -1283,7 +1287,7 @@ int parseMoonData(char* _KEY, float _LAT, float _LON)
   const char * moonsetL      = astronomy["moonset"] | "";       // "22:33"
   const char * moon_statusL  = astronomy["moon_status"] | "";   // "-"
   const char * moon_phaseL   = astronomy["moon_phase"] | "";    // "WAXING_CRESCENT"
-  const char * moon_illum_percentageL = astronomy["moon_illumination_percentage"] | ""; // "26.53"
+  const char * moon_illum_pctL = astronomy["moon_illumination_percentage"] | ""; // "26.53"
 
   // Do the copy outs
   strlcpy(location_longitude, location_longitudeL, sizeof(location_longitude));
@@ -1299,7 +1303,7 @@ int parseMoonData(char* _KEY, float _LAT, float _LON)
   strlcpy(moonset, moonsetL, sizeof(moonset));
   strlcpy(moon_status, moon_statusL, sizeof(moon_status));
   strlcpy(moon_phase, moon_phaseL, sizeof(moon_phase));
-  strlcpy(moon_illum_percentage, moon_illum_percentageL, sizeof(moon_illum_percentage));
+  strlcpy(moon_illum_pct, moon_illum_pctL, sizeof(moon_illum_pct));
 
   // Then the numeric variables
   sun_altitude  = astronomy["sun_altitude"];   // 33.009196129845215
@@ -1312,5 +1316,5 @@ int parseMoonData(char* _KEY, float _LAT, float _LON)
   moon_parallactic_angle = astronomy["moon_parallactic_angle"];  // -10.690759049458498
 
   http.end();
-  return 0;
+  return httpCode;
 }

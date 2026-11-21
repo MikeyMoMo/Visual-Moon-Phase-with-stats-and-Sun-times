@@ -1,5 +1,5 @@
 #include "MoonPhase.hpp"
-//#warning USING MOONPHASE_EXACT
+
 double MoonPhase::_fhour(const struct tm &timeinfo)
 {
     return timeinfo.tm_hour + (timeinfo.tm_min * 60 + timeinfo.tm_sec) / 3600.0;
