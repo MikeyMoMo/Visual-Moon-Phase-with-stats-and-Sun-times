@@ -41,3 +41,4 @@ Mikey the Midnight Coder
 ![Sun Info](https://github.com/user-attachments/assets/ccb0a1a8-243c-4e80-9cd9-4913d3873078)
 ![Where's the Moon](https://github.com/user-attachments/assets/a7526efd-c642-43fc-9940-0ddaec0bf534)
 ![Menu](https://github.com/user-attachments/assets/03ec1185-ab6f-421a-a286-1126676a243b)
+<img width="200" height="100" alt="NewMoonClock" src="https://github.com/user-attachments/assets/4b9d2421-13c6-4a6b-97aa-348b4730d942" />
