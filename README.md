@@ -6,8 +6,11 @@ Moon Display
 The moon display shows:
 
 • Current lunar altitude (height in the sky from east to west, by arrow)
+
 • Current lunar azimuth (compass direction from your location by 8 cardinal compass positions)
+
 • Visibility status (If you should be able to see it if the sun is not blocking it out)
+
 • Lunar phase information
 
 The arrow represents the Moon's progress through its complete sky cycle.
