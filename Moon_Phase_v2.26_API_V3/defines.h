@@ -28,7 +28,7 @@ TFT_eSprite* targetSprite = nullptr;  // This is set at needed to steer the jpb 
 // This is a free API key from: ipgeolocation.io
 // Get a kay here: https://app.ipgeolocation.io/
 // The free key gives you up to 1000 pulls per day.  This code uses 144/day.
-#define apiKey "8046078e6bc64b2784e7e6a51dc31343"  // From: ipgeolocation.io
+#define apiKey "********************************"  // Free from: ipgeolocation.io
 #define ARROW_UP_IS_ZERO
 
 int dispLine1 = 8, dispLine2, dispLine3, dispLine4, dispLine5, dispLine6;
